@@ -43,8 +43,12 @@ def expand2(n):
 def requirement(fn,istrue):
   writefile(fn,str(istrue) + '\n')
   return istrue
+  
+def to_weierstrass(A, B, x, y):
+	return (x/B + A/(3*B), y/B)
 
 def verify():
+  print('trying verify')
   try:
     os.mkdir('proof')
   except OSError as e:
@@ -52,7 +56,7 @@ def verify():
 
   try:
     s = set(map(Integer, readfile('primes').split()))
-  except IOError, e:
+  except IOError(e):
     if e.errno != ENOENT: raise
     s = set()
 
@@ -201,7 +205,7 @@ def verify_pass(V, needtofactor):
     for v in V:
       while d % v == 0:
         d //= v
-	f *= factor(v)
+        f *= factor(v)
     writefile('verify-cofactor','%s\n' % f)
   else:
     writefile('verify-trace','Unverified\n')
@@ -259,7 +263,7 @@ def verify_pass(V, needtofactor):
     for v in V:
       while d % v == 0:
         d //= v
-	f *= factor(v)
+        f *= factor(v)
     writefile('verify-twistcofactor','%s\n' % f)
     gcdtwistlpis1 = gcd(twistl,p) == 1
     safetwist &= requirement('verify-gcdtwistlp1',gcdtwistlpis1)
@@ -298,8 +302,8 @@ def verify_pass(V, needtofactor):
         # best case for attack: cyclic; each power is usable
 	# also assume that kangaroo is as efficient as rho
         if v + sqrt(pi4*joint/v) < sqrt(pi4*joint):
-	  precomp += v
-	  joint /= v
+            precomp += v
+            joint /= v
         
     rho = log(precomp + sqrt(pi4 * joint))/log(2)
     writefile('verify-jointrho','%.1f\n' % rho)
@@ -373,6 +377,23 @@ def verify_pass(V, needtofactor):
     b = (2*A^3-9*A)/(27*B^3)
     x0,y0 = (x0+A/3)/B,y0/B
     x1,y1 = (x1+A/3)/B,y1/B
+    
+    p0s_weier = to_weierstrass(a,b,x0,y0)
+    p1s_weier = to_weierstrass(a,b,x1,y1)
+    print("point0 montgomery:" , [x0,y0])
+    print("weier:", p0s_weier)
+    
+    print("point1 montgomery:",[x1,y1])
+    print("weier:", p1s_weier)
+    
+    
+    g_x = Integer(readfile('jubjub_mont_gen_x'))
+    g_y = Integer(readfile('jubjub_mont_gen_y'))
+    
+    g_point_weier = to_weierstrass(a, b, g_x, g_y)
+    
+    print('generator x & y in weirer form', [ hex(g_point_weier[0]), hex(g_point_weier[1]) ] )
+     
     shape = 'shortw'
 
   try:
@@ -440,5 +461,6 @@ originaldir = os.open('.',os.O_RDONLY)
 for i in range(1,len(sys.argv)):
   os.fchdir(originaldir)
   os.chdir(sys.argv[i])
-  verify()
+
+verify()
 
